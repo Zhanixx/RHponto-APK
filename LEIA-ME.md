@@ -4,14 +4,6 @@ Registra a saída (12:00) e a volta (13:00) do almoço no RHID, usando a localiz
 **sozinho, mesmo com o celular bloqueado**: a tela acende sobre o bloqueio, registra e apaga.
 Se falhar (rede/GPS), tenta de novo mais 2 vezes, a cada 2 min.
 
-## Gerar o APK
-
-**Opção A — GitHub (sem instalar nada):**
-1. Crie um repositório privado no GitHub e envie esta pasta inteira.
-2. Aba **Actions** → "Gerar APK" roda sozinho. Ao terminar, baixe o artefato `PontoAlmocoRHID-apk`.
-
-**Opção B — Android Studio:** File → Open → esta pasta → Build → Build APK(s).
-
 ## Primeira configuração no celular
 1. Instale o APK (permita "instalar apps desconhecidos").
 2. No app, toque nos botões 1 a 5 da seção "Configuração inicial" até todos ficarem ✔.
