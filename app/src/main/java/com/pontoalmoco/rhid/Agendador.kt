@@ -10,7 +10,6 @@ import java.util.Calendar
 object Agendador {
     const val ACAO_DISPARO = "com.pontoalmoco.rhid.DISPARO"
     const val EXTRA_TIPO = "tipo"
-    const val EXTRA_LIMITE = "limite"
     const val EXTRA_TENTATIVA = "tentativa"
     val TIPOS = listOf("saida", "volta")
 
@@ -32,11 +31,10 @@ object Agendador {
         return null
     }
 
-    private fun pendingIntent(ctx: Context, tipo: String, requestCode: Int, limite: Long = 0, tentativa: Boolean = false): PendingIntent {
+    private fun pendingIntent(ctx: Context, tipo: String, requestCode: Int, tentativa: Int = 0): PendingIntent {
         val i = Intent(ctx, AlarmReceiver::class.java)
             .setAction(ACAO_DISPARO)
             .putExtra(EXTRA_TIPO, tipo)
-            .putExtra(EXTRA_LIMITE, limite)
             .putExtra(EXTRA_TENTATIVA, tentativa)
         return PendingIntent.getBroadcast(
             ctx, requestCode, i,
@@ -57,9 +55,9 @@ object Agendador {
         }
     }
 
-    fun agendarNovaTentativa(ctx: Context, tipo: String, limite: Long) {
-        val pi = pendingIntent(ctx, tipo, Config.codigo(tipo) + 10, limite, true)
-        agendarExato(ctx, System.currentTimeMillis() + 60_000L, pi)
+    fun agendarNovaTentativa(ctx: Context, tipo: String, tentativa: Int, atrasoMs: Long) {
+        val pi = pendingIntent(ctx, tipo, Config.codigo(tipo) + 10, tentativa)
+        agendarExato(ctx, System.currentTimeMillis() + atrasoMs, pi)
     }
 
     fun cancelarTentativa(ctx: Context, tipo: String) {

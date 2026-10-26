@@ -1,8 +1,8 @@
 # Ponto Almoço RHID (Android)
 
 Registra a saída (12:00) e a volta (13:00) do almoço no RHID, usando a localização real do celular,
-**somente quando o celular está desbloqueado e em uso**. Se estiver bloqueado, espera você usar
-por até 30 min (configurável); depois disso avisa para registrar manualmente.
+**sozinho, mesmo com o celular bloqueado**: a tela acende sobre o bloqueio, registra e apaga.
+Se falhar (rede/GPS), tenta de novo mais 2 vezes, a cada 2 min.
 
 ## Gerar o APK
 
@@ -14,8 +14,8 @@ por até 30 min (configurável); depois disso avisa para registrar manualmente.
 
 ## Primeira configuração no celular
 1. Instale o APK (permita "instalar apps desconhecidos").
-2. No app, toque nos botões 1 a 4 da seção "Configuração inicial" até todos ficarem ✔.
-3. Toque em **5. Abrir RHID e fazer login** e entre na sua conta.
+2. No app, toque nos botões 1 a 5 da seção "Configuração inicial" até todos ficarem ✔.
+3. Toque em **6. Abrir RHID e fazer login** e entre na sua conta.
 4. Use **Testar saída** — percorre o fluxo e só destaca o botão final em laranja, sem registrar.
 
 Em Xiaomi/Samsung/Motorola, libere também "Início automático" / "Sem restrições" de bateria para o app,

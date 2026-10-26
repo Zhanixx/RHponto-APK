@@ -30,7 +30,12 @@ function rhidRun(cfg) {
     for (var t = 0; t < ms; t += 500) { var v = fn(); if (v) return v; await dormir(500); }
     return null;
   };
-  var fim = function (ok, msg) { if (ok) PontoApp.sucesso(msg); else PontoApp.erro(msg); };
+  // definitivo = não adianta tentar de novo (sem login, já registrado, fora de ordem)
+  var fim = function (ok, msg, definitivo) {
+    if (ok) PontoApp.sucesso(msg);
+    else if (definitivo) PontoApp.erroFinal(msg);
+    else PontoApp.erro(msg);
+  };
 
   (async function () {
     try {
@@ -41,7 +46,7 @@ function rhidRun(cfg) {
           if (naMarcacao()) return "marcacao";
           return null;
         }, 20000);
-        if (tela === "login") return fim(false, "Sessão do RHID expirada. Abra o app, toque em \"Abrir RHID e fazer login\" e entre de novo.");
+        if (tela === "login") return fim(false, "Sessão do RHID expirada. Abra o app, toque em \"Abrir RHID e fazer login\" e entre de novo.", true);
         if (!tela) return fim(false, "O painel do RHID não carregou.");
         if (tela === "marcacao") {           // abriu direto no mapa: volta ao painel para contar as batidas
           window.__rhidRodando = false;
@@ -53,7 +58,7 @@ function rhidRun(cfg) {
         var n = contar();
         var ordemOk = cfg.tipo === "saida" ? n % 2 === 1 : (n % 2 === 0 && n >= 2);
         if (!ordemOk && !cfg.teste) {
-          return fim(false, "Hoje já há " + n + " batida(s): a " + nomeTipo + " parece já registrada ou fora de ordem. Nada foi feito.");
+          return fim(false, "Hoje já há " + n + " batida(s): a " + nomeTipo + " parece já registrada ou fora de ordem. Nada foi feito.", true);
         }
         antes = n;
         var b1 = await esperar(function () { return botoes()[0]; }, 15000);

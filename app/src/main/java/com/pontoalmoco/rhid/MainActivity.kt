@@ -29,7 +29,6 @@ class MainActivity : Activity() {
     private lateinit var swAtivo: Switch
     private lateinit var btSaida: Button
     private lateinit var btVolta: Button
-    private lateinit var edTolerancia: EditText
     private lateinit var txProximos: TextView
     private lateinit var txPermissoes: TextView
     private lateinit var txLog: TextView
@@ -74,10 +73,7 @@ class MainActivity : Activity() {
             col.addView(linha)
         }
 
-        col.addView(titulo("Presença"))
-        col.addView(texto("O ponto só é batido com o celular desbloqueado e em uso. Se estiver bloqueado na hora, o app espera você usar o celular por até (minutos):"))
-        edTolerancia = EditText(this).apply { inputType = InputType.TYPE_CLASS_NUMBER }
-        col.addView(edTolerancia)
+        col.addView(texto("O ponto é batido sozinho, mesmo com o celular bloqueado: a tela acende por alguns segundos sobre o bloqueio, registra e apaga. Se falhar (rede/GPS), tenta de novo mais 2 vezes, a cada 2 min."))
 
         col.addView(botao("Salvar") { salvar() })
         txProximos = texto("")
@@ -90,7 +86,8 @@ class MainActivity : Activity() {
         col.addView(botao("2. Permitir alarmes exatos") { abrirAlarmes() })
         col.addView(botao("3. Permitir sobrepor a outros apps") { abrirSobrepor() })
         col.addView(botao("4. Ignorar economia de bateria") { abrirBateria() })
-        col.addView(botao("5. Abrir RHID e fazer login") { startActivity(RhidActivity.intent(this, null, false)) })
+        col.addView(botao("5. Permitir tela cheia (registrar com celular bloqueado)") { abrirTelaCheia() })
+        col.addView(botao("6. Abrir RHID e fazer login") { startActivity(RhidActivity.intent(this, null, false)) })
 
         col.addView(titulo("Testes (não registram ponto)"))
         col.addView(botao("Testar saída") { startActivity(RhidActivity.intent(this, "saida", true)) })
@@ -117,7 +114,6 @@ class MainActivity : Activity() {
         saida = cfg.saida
         volta = cfg.volta
         checksDias.forEach { (dia, cb) -> cb.isChecked = dia in cfg.dias }
-        edTolerancia.setText(cfg.tolerancia.toString())
         atualizarBotoesHora()
     }
 
@@ -136,17 +132,15 @@ class MainActivity : Activity() {
     }
 
     private fun salvar() {
-        val tol = (edTolerancia.text.toString().toIntOrNull() ?: 30).coerceIn(5, 60)
         Config.salvar(
             this, Config.Dados(
                 ativo = swAtivo.isChecked,
                 saida = saida,
                 volta = volta,
                 dias = checksDias.filter { it.second.isChecked }.map { it.first }.toSet(),
-                tolerancia = tol
+                tolerancia = Config.ler(this).tolerancia
             )
         )
-        edTolerancia.setText(tol.toString())
         Agendador.agendarTudo(this)
         mostrarProximos()
         Toast.makeText(this, "Salvo ✔", Toast.LENGTH_SHORT).show()
@@ -186,6 +180,14 @@ class MainActivity : Activity() {
         startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
     }
 
+    private fun abrirTelaCheia() {
+        if (Build.VERSION.SDK_INT >= 34) {
+            startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName")))
+        } else {
+            Toast.makeText(this, "Já permitido nesta versão do Android.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     @SuppressLint("BatteryLife")
     private fun abrirBateria() {
         startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
@@ -197,8 +199,9 @@ class MainActivity : Activity() {
             "Localização" to (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == ok),
             "Notificações" to (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == ok),
             "Alarmes exatos" to Agendador.podeAlarmeExato(this),
-            "Sobrepor a outros apps (registrar sem tocar)" to Settings.canDrawOverlays(this),
-            "Sem economia de bateria" to getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+            "Sobrepor a outros apps" to Settings.canDrawOverlays(this),
+            "Sem economia de bateria" to getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName),
+            "Tela cheia (celular bloqueado)" to Notificador.podeTelaCheia(this)
         )
         txPermissoes.text = itens.joinToString("\n") { (nome, liberado) -> (if (liberado) "✔ " else "✖ ") + nome }
     }
