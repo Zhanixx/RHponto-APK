@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04   # imagem com Android SDK pré-instalado
@@ -22,3 +25,12 @@ jobs:
         with:
           name: PontoAlmocoRHID-apk
           path: app/build/outputs/apk/debug/*.apk
+      - name: Publicar Release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk PontoAlmocoRHID.apk
+          gh release create "build-${{ github.run_number }}" PontoAlmocoRHID.apk \
+            --title "Ponto Almoço RHID (build ${{ github.run_number }})" \
+            --notes "APK gerado automaticamente." --latest
