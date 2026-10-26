@@ -93,6 +93,16 @@ class MainActivity : Activity() {
         col.addView(botao("Testar saída") { startActivity(RhidActivity.intent(this, "saida", true)) })
         col.addView(botao("Testar volta") { startActivity(RhidActivity.intent(this, "volta", true)) })
 
+        col.addView(titulo("Teste real (registra de verdade)"))
+        col.addView(texto("Faz o fluxo completo e REGISTRA uma batida no RHID (apague depois se precisar). Não interfere nos horários agendados."))
+        col.addView(botao("Registrar agora (real)") {
+            startActivity(RhidActivity.intent(this, "saida", false, 0, true))
+        })
+        col.addView(botao("Simular alarme em 1 minuto (real) — bloqueie o celular") {
+            val quando = Agendador.agendarTesteReal(this, 60_000L)
+            Toast.makeText(this, "Alarme de teste às ${Config.hora(quando)}. Bloqueie o celular e aguarde.", Toast.LENGTH_LONG).show()
+        })
+
         col.addView(titulo("Histórico"))
         txLog = texto("")
         col.addView(txLog)

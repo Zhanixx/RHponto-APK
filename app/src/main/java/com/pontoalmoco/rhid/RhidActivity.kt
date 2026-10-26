@@ -41,16 +41,18 @@ class RhidActivity : Activity() {
         const val MAX_TENTATIVAS = 3
         @Volatile var emExecucao = false
 
-        fun intent(ctx: Context, tipo: String?, teste: Boolean, tentativa: Int = 0): Intent =
+        /** forcar = teste real: registra de verdade, ignora ordem das batidas e não marca o dia como feito. */
+        fun intent(ctx: Context, tipo: String?, teste: Boolean, tentativa: Int = 0, forcar: Boolean = false): Intent =
             Intent(ctx, RhidActivity::class.java)
                 .putExtra("tipo", tipo)
                 .putExtra("teste", teste)
                 .putExtra("tentativa", tentativa)
+                .putExtra("forcar", forcar)
 
         /** Chamado pelo alarme. Não exige que você esteja usando o celular. */
-        fun iniciarAutomatico(ctx: Context, tipo: String, tentativa: Int) {
+        fun iniciarAutomatico(ctx: Context, tipo: String, tentativa: Int, forcar: Boolean = false) {
             if (emExecucao) return
-            val i = intent(ctx, tipo, false, tentativa).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val i = intent(ctx, tipo, false, tentativa, forcar).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             val pm = ctx.getSystemService(PowerManager::class.java)
             val km = ctx.getSystemService(KeyguardManager::class.java)
             val desbloqueado = pm.isInteractive && !km.isKeyguardLocked
@@ -77,6 +79,7 @@ class RhidActivity : Activity() {
     private var tipo: String? = null
     private var teste = false
     private var tentativa = 0
+    private var forcar = false
     private var fase = "INICIO"
     private var antes = -1
     private var terminado = false
@@ -97,6 +100,7 @@ class RhidActivity : Activity() {
         tipo = intent.getStringExtra("tipo")
         teste = intent.getBooleanExtra("teste", false)
         tentativa = intent.getIntExtra("tentativa", 0)
+        forcar = intent.getBooleanExtra("forcar", false)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (automatico) prepararTelaBloqueada()
@@ -123,7 +127,7 @@ class RhidActivity : Activity() {
         val t = tipo
         when {
             t == null -> status.text = "Faça login no RHID. A sessão fica salva no app."
-            !teste && Config.feitoHoje(this, t) -> {
+            !teste && !forcar && Config.feitoHoje(this, t) -> {
                 terminado = true
                 status.text = "A ${Config.nome(t)} de hoje já foi registrada pelo app."
                 handler.postDelayed({ finish() }, 4000)
@@ -133,7 +137,8 @@ class RhidActivity : Activity() {
             else -> {
                 emExecucao = true
                 Notificador.cancelarPendente(this, t)
-                status.text = (if (teste) "TESTE — " else "") + "Registrando ${Config.nome(t)}…" +
+                status.text = (if (teste) "TESTE — " else "") + (if (forcar) "TESTE REAL — " else "") +
+                    "Registrando ${if (forcar) "ponto" else Config.nome(t)}…" +
                     (if (tentativa > 0) " (tentativa ${tentativa + 1})" else "")
                 handler.postDelayed({ concluir(false, "Tempo esgotado (2 min) sem concluir o registro.") }, 120_000)
                 handler.postDelayed(loopInjecao, 3000)
@@ -195,6 +200,7 @@ class RhidActivity : Activity() {
             .put("teste", teste)
             .put("fase", fase)
             .put("antes", antes)
+            .put("forcar", forcar)
         web.evaluateJavascript("$script\n;rhidRun($cfg);", null)
     }
 
@@ -232,13 +238,14 @@ class RhidActivity : Activity() {
 
         var texto = msg
         if (ok) {
-            Config.marcarFeito(this, t)
+            if (!forcar) Config.marcarFeito(this, t)
         } else if (!definitivo && tentativa + 1 < MAX_TENTATIVAS) {
-            Agendador.agendarNovaTentativa(this, t, tentativa + 1, 120_000L)
+            Agendador.agendarNovaTentativa(this, t, tentativa + 1, 120_000L, forcar)
             texto = "$msg Nova tentativa em 2 min."
         }
+        if (forcar) texto = "[TESTE REAL] $texto"
         status.text = (if (ok) "✔ " else "✖ ") + texto
-        Config.registrarLog(this, "${Config.nome(t)}: $texto")
+        Config.registrarLog(this, "${if (forcar) "teste real" else Config.nome(t)}: $texto")
         Notificador.resultado(this, ok, t, texto)
         handler.postDelayed({ finish() }, if (ok) 5000 else 8000)
     }

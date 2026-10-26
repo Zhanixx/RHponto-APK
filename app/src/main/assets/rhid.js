@@ -57,7 +57,7 @@ function rhidRun(cfg) {
         await dormir(1500);
         var n = contar();
         var ordemOk = cfg.tipo === "saida" ? n % 2 === 1 : (n % 2 === 0 && n >= 2);
-        if (!ordemOk && !cfg.teste) {
+        if (!ordemOk && !cfg.teste && !cfg.forcar) {
           return fim(false, "Hoje já há " + n + " batida(s): a " + nomeTipo + " parece já registrada ou fora de ordem. Nada foi feito.", true);
         }
         antes = n;

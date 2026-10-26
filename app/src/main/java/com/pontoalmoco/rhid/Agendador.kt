@@ -11,6 +11,7 @@ object Agendador {
     const val ACAO_DISPARO = "com.pontoalmoco.rhid.DISPARO"
     const val EXTRA_TIPO = "tipo"
     const val EXTRA_TENTATIVA = "tentativa"
+    const val EXTRA_FORCAR = "forcar"
     val TIPOS = listOf("saida", "volta")
 
     /** Próximo horário (em ms) para "HH:mm" em um dos dias permitidos. */
@@ -31,11 +32,12 @@ object Agendador {
         return null
     }
 
-    private fun pendingIntent(ctx: Context, tipo: String, requestCode: Int, tentativa: Int = 0): PendingIntent {
+    private fun pendingIntent(ctx: Context, tipo: String, requestCode: Int, tentativa: Int = 0, forcar: Boolean = false): PendingIntent {
         val i = Intent(ctx, AlarmReceiver::class.java)
             .setAction(ACAO_DISPARO)
             .putExtra(EXTRA_TIPO, tipo)
             .putExtra(EXTRA_TENTATIVA, tentativa)
+            .putExtra(EXTRA_FORCAR, forcar)
         return PendingIntent.getBroadcast(
             ctx, requestCode, i,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -55,9 +57,16 @@ object Agendador {
         }
     }
 
-    fun agendarNovaTentativa(ctx: Context, tipo: String, tentativa: Int, atrasoMs: Long) {
-        val pi = pendingIntent(ctx, tipo, Config.codigo(tipo) + 10, tentativa)
+    fun agendarNovaTentativa(ctx: Context, tipo: String, tentativa: Int, atrasoMs: Long, forcar: Boolean = false) {
+        val pi = pendingIntent(ctx, tipo, Config.codigo(tipo) + 10, tentativa, forcar)
         agendarExato(ctx, System.currentTimeMillis() + atrasoMs, pi)
+    }
+
+    /** Teste real: dispara o mesmo alarme dos horários, daqui a [atrasoMs], registrando de verdade. */
+    fun agendarTesteReal(ctx: Context, atrasoMs: Long): Long {
+        val quando = System.currentTimeMillis() + atrasoMs
+        agendarExato(ctx, quando, pendingIntent(ctx, "saida", 21, 0, true))
+        return quando
     }
 
     fun cancelarTentativa(ctx: Context, tipo: String) {

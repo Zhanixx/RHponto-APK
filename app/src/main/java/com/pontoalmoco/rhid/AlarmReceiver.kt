@@ -10,12 +10,14 @@ class AlarmReceiver : BroadcastReceiver() {
         if (intent.action != Agendador.ACAO_DISPARO) return
         val tipo = intent.getStringExtra(Agendador.EXTRA_TIPO) ?: return
         val tentativa = intent.getIntExtra(Agendador.EXTRA_TENTATIVA, 0)
+        val forcar = intent.getBooleanExtra(Agendador.EXTRA_FORCAR, false) // teste real
 
-        if (tentativa == 0) Agendador.agendarTudo(ctx) // já deixa agendado o próximo dia
+        if (!forcar) {
+            if (tentativa == 0) Agendador.agendarTudo(ctx) // já deixa agendado o próximo dia
+            val cfg = Config.ler(ctx)
+            if (!cfg.ativo || Config.feitoHoje(ctx, tipo)) return
+        }
 
-        val cfg = Config.ler(ctx)
-        if (!cfg.ativo || Config.feitoHoje(ctx, tipo)) return
-
-        RhidActivity.iniciarAutomatico(ctx, tipo, tentativa)
+        RhidActivity.iniciarAutomatico(ctx, tipo, tentativa, forcar)
     }
 }
