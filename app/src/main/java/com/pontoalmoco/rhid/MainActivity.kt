@@ -107,7 +107,12 @@ class MainActivity : Activity() {
         txLog = texto("")
         col.addView(txLog)
 
+        col.addView(titulo("Atualização"))
+        col.addView(texto("Versão instalada: ${Atualizador.nomeInstalado(this)}"))
+        col.addView(botao("Verificar atualização") { Atualizador.verificar(this, false) })
+
         carregar()
+        Atualizador.verificar(this, true) // confere sozinho ao abrir o app
     }
 
     override fun onResume() {

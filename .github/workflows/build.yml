@@ -29,8 +29,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
+          NOTAS: ${{ github.event.head_commit.message }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk PontoAlmocoRHID.apk
           gh release create "build-${{ github.run_number }}" PontoAlmocoRHID.apk \
             --title "Ponto Almoço RHID (build ${{ github.run_number }})" \
-            --notes "APK gerado automaticamente." --latest
+            --notes "${NOTAS:-APK gerado automaticamente.}" --latest
