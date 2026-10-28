@@ -68,6 +68,10 @@ object Config {
 
     fun log(ctx: Context): String = prefs(ctx).getString("log", "") ?: ""
 
+    fun limparLog(ctx: Context) {
+        prefs(ctx).edit().remove("log").apply()
+    }
+
     fun hora(ms: Long): String = SimpleDateFormat("HH:mm", BR).format(Date(ms))
 
     fun dataHora(ms: Long): String = SimpleDateFormat("EEE dd/MM 'às' HH:mm", BR).format(Date(ms))
