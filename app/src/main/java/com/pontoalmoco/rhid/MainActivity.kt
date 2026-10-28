@@ -184,8 +184,14 @@ class MainActivity : Activity() {
     }
 
     private fun abrirAlarmes() {
-        if (Build.VERSION.SDK_INT >= 31) {
-            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
+        if (Agendador.podeAlarmeExato(this)) {
+            Toast.makeText(this, "Alarmes exatos já liberados.", Toast.LENGTH_SHORT).show()
+        } else if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
+            } catch (e: Exception) {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+            }
         } else {
             Toast.makeText(this, "Já permitido nesta versão do Android.", Toast.LENGTH_SHORT).show()
         }

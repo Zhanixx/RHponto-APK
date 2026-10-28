@@ -50,8 +50,12 @@ class RhidActivity : Activity() {
                 .putExtra("forcar", forcar)
 
         /** Chamado pelo alarme. Não exige que você esteja usando o celular. */
-        fun iniciarAutomatico(ctx: Context, tipo: String, tentativa: Int, forcar: Boolean = false) {
-            if (emExecucao) return
+        /** Momento em que a tela de registro abriu pela última vez (para o alarme conferir se abriu mesmo). */
+        @Volatile var ultimaAbertura = 0L
+
+        /** Chamado pelo alarme. Não exige que você esteja usando o celular. Devolve o caminho usado (para o histórico). */
+        fun iniciarAutomatico(ctx: Context, tipo: String, tentativa: Int, forcar: Boolean = false): String {
+            if (emExecucao) return "já estava registrando"
             val i = intent(ctx, tipo, false, tentativa, forcar).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             val pm = ctx.getSystemService(PowerManager::class.java)
             val km = ctx.getSystemService(KeyguardManager::class.java)
@@ -60,16 +64,12 @@ class RhidActivity : Activity() {
             // Celular bloqueado/tela apagada: notificação de tela cheia (igual despertador) abre o app sobre o bloqueio.
             if (!desbloqueado && Notificador.podeTelaCheia(ctx)) {
                 Notificador.telaCheia(ctx, tipo, i)
-                return
+                return "celular bloqueado → tela cheia"
             }
-            // Celular em uso (ou sem tela cheia): abre direto por cima, se "sobrepor a outros apps" estiver liberado.
-            if (Settings.canDrawOverlays(ctx)) {
-                try {
-                    ctx.startActivity(i)
-                    return
-                } catch (e: Exception) { }
-            }
-            Notificador.tocarParaRegistrar(ctx, tipo)
+            // Celular em uso: abre por cima do que estiver na tela.
+            try { ctx.startActivity(i) } catch (e: Exception) { }
+            return (if (desbloqueado) "celular em uso" else "celular bloqueado sem tela cheia") +
+                " → abrir direto" + (if (Settings.canDrawOverlays(ctx)) "" else " (sem permissão de sobrepor)")
         }
     }
 
@@ -101,6 +101,7 @@ class RhidActivity : Activity() {
         teste = intent.getBooleanExtra("teste", false)
         tentativa = intent.getIntExtra("tentativa", 0)
         forcar = intent.getBooleanExtra("forcar", false)
+        if (tipo != null) ultimaAbertura = System.currentTimeMillis()
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (automatico) prepararTelaBloqueada()

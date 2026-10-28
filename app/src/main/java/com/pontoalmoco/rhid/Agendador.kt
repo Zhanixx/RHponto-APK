@@ -53,7 +53,7 @@ object Agendador {
             if (!cfg.ativo) continue
             val hora = if (tipo == "saida") cfg.saida else cfg.volta
             val quando = proxima(hora, cfg.dias) ?: continue
-            agendarExato(ctx, quando, pi)
+            agendarDespertador(ctx, quando, pi)
         }
     }
 
@@ -65,7 +65,7 @@ object Agendador {
     /** Teste real: dispara o mesmo alarme dos horários, daqui a [atrasoMs], registrando de verdade. */
     fun agendarTesteReal(ctx: Context, atrasoMs: Long): Long {
         val quando = System.currentTimeMillis() + atrasoMs
-        agendarExato(ctx, quando, pendingIntent(ctx, "saida", 21, 0, true))
+        agendarDespertador(ctx, quando, pendingIntent(ctx, "saida", 21, 0, true)) // mesmo tipo de alarme dos horários
         return quando
     }
 
@@ -76,6 +76,23 @@ object Agendador {
 
     fun podeAlarmeExato(ctx: Context): Boolean =
         Build.VERSION.SDK_INT < 31 || ctx.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+
+    /**
+     * Horários principais (12:00/13:00) como "despertador" do sistema: é o único tipo de alarme que o Android
+     * nunca adia nem corta por economia de bateria (Doze, modo restrito da Motorola etc.).
+     */
+    private fun agendarDespertador(ctx: Context, quando: Long, pi: PendingIntent) {
+        val am = ctx.getSystemService(AlarmManager::class.java)
+        if (!podeAlarmeExato(ctx)) {
+            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi)
+            return
+        }
+        val abrirApp = PendingIntent.getActivity(
+            ctx, 99, Intent(ctx, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        am.setAlarmClock(AlarmManager.AlarmClockInfo(quando, abrirApp), pi)
+    }
 
     private fun agendarExato(ctx: Context, quando: Long, pi: PendingIntent) {
         val am = ctx.getSystemService(AlarmManager::class.java)

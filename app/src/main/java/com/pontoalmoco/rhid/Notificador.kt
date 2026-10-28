@@ -63,11 +63,12 @@ object Notificador {
         nm.notify(100 + Config.codigo(tipo), n)
     }
 
-    fun tocarParaRegistrar(ctx: Context, tipo: String) = mostrar(
+    fun tocarParaRegistrar(ctx: Context, tipo: String, abrir: Intent) = mostrar(
         ctx, 100 + Config.codigo(tipo),
-        "Hora do ponto (${Config.nome(tipo)})",
-        "Toque para registrar. Para registrar sozinho, libere \"Tela cheia\" e \"Sobrepor a outros apps\" no app.",
-        RhidActivity.intent(ctx, tipo, false)
+        "Hora do ponto (${Config.nome(tipo)}) — toque para registrar",
+        "O Android não deixou o app abrir sozinho. Toque aqui para registrar agora. " +
+            "Para não precisar tocar, libere \"Tela cheia\" e \"Sobrepor a outros apps\" no app.",
+        abrir
     )
 
     fun cancelarPendente(ctx: Context, tipo: String) {
